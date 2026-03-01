@@ -9,6 +9,8 @@ import rustpadRaw from "../rustpad-server/src/rustpad.rs?raw";
 import Footer from "./Footer";
 import ReadCodeConfirm from "./ReadCodeConfirm";
 import Sidebar from "./Sidebar";
+import TypingIndicator from "./TypingIndicator";
+import UsernameModal from "./UsernameModal";
 import animals from "./animals.json";
 import languages from "./languages.json";
 import Rustpad, { UserInfo } from "./rustpad";
@@ -38,6 +40,9 @@ function App() {
   const [name, setName] = useLocalStorageState("name", {
     defaultValue: generateName,
   });
+  const [hasSetName, setHasSetName] = useLocalStorageState("hasSetName", {
+    defaultValue: false,
+  });
   const [hue, setHue] = useLocalStorageState("hue", {
     defaultValue: generateHue,
   });
@@ -45,6 +50,7 @@ function App() {
   const [darkMode, setDarkMode] = useLocalStorageState("darkMode", {
     defaultValue: false,
   });
+  const [typingUsers, setTypingUsers] = useState<Record<number, UserInfo>>({});
   const rustpad = useRef<Rustpad>();
   const id = useHash();
 
@@ -75,6 +81,7 @@ function App() {
           }
         },
         onChangeUsers: setUsers,
+        onChangeTyping: setTypingUsers,
       });
       return () => {
         rustpad.current?.dispose();
@@ -137,6 +144,8 @@ function App() {
     setDarkMode(!darkMode);
   }
 
+  const showUsernameModal = !hasSetName || name.startsWith("Anonymous ");
+
   return (
     <Flex
       direction="column"
@@ -177,6 +186,13 @@ function App() {
             setReadCodeConfirmOpen(false);
           }}
         />
+        <UsernameModal
+          isOpen={showUsernameModal}
+          onSubmit={(newName) => {
+            setName(newName);
+            setHasSetName(true);
+          }}
+        />
 
         <Flex flex={1} minW={0} h="100%" direction="column" overflow="hidden">
           <HStack
@@ -194,6 +210,7 @@ function App() {
             <Icon as={VscGist} fontSize="md" color="purple.500" />
             <Text>{id}</Text>
           </HStack>
+          <TypingIndicator typingUsers={typingUsers} />
           <Box flex={1} minH={0}>
             <Editor
               theme={darkMode ? "vs-dark" : "vs"}
