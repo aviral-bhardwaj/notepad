@@ -15,6 +15,7 @@ export type RustpadOptions = {
   readonly onDesynchronized?: () => void;
   readonly onChangeLanguage?: (language: string) => void;
   readonly onChangeUsers?: (users: Record<number, UserInfo>) => void;
+  readonly onChangeTyping?: (typingUsers: Record<number, UserInfo>) => void;
   readonly reconnectInterval?: number;
 };
 
@@ -36,6 +37,7 @@ class Rustpad {
   private readonly beforeUnload: (event: BeforeUnloadEvent) => void;
   private readonly tryConnectId: number;
   private readonly resetFailuresId: number;
+  private readonly updateTypingId: number;
 
   // Client-server state
   private me: number = -1;
@@ -51,6 +53,7 @@ class Rustpad {
   private lastValue: string = "";
   private ignoreChanges: boolean = false;
   private oldDecorations: string[] = [];
+  private lastTyped: Record<number, number> = {};
 
   constructor(readonly options: RustpadOptions) {
     this.model = options.editor.getModel()!;
@@ -83,12 +86,14 @@ class Rustpad {
       () => (this.recentFailures = 0),
       15 * interval,
     );
+    this.updateTypingId = window.setInterval(() => this.updateTyping(), 1000);
   }
 
   /** Destroy this Rustpad instance and close any sockets. */
   dispose() {
     window.clearInterval(this.tryConnectId);
     window.clearInterval(this.resetFailuresId);
+    window.clearInterval(this.updateTypingId);
     this.onSelectionHandle.dispose();
     this.onCursorHandle.dispose();
     this.onChangeHandle.dispose();
@@ -172,6 +177,7 @@ class Rustpad {
         if (id === this.me) {
           this.serverAck();
         } else {
+          this.lastTyped[id] = Date.now();
           operation = OpSeq.from_str(JSON.stringify(operation));
           this.applyServer(operation);
         }
@@ -247,6 +253,20 @@ class Rustpad {
     if (this.myInfo) {
       this.ws?.send(`{"ClientInfo":${JSON.stringify(this.myInfo)}}`);
     }
+  }
+
+  private updateTyping() {
+    const now = Date.now();
+    const typingUsers: Record<number, UserInfo> = {};
+    for (const [idStr, ts] of Object.entries(this.lastTyped)) {
+      const id = Number(idStr);
+      if (now - ts < 3000 && id in this.users) {
+        typingUsers[id] = this.users[id];
+      } else if (now - ts >= 5000) {
+        delete this.lastTyped[id];
+      }
+    }
+    this.options.onChangeTyping?.(typingUsers);
   }
 
   private sendCursorData() {
