@@ -1,7 +1,7 @@
 [package]
 name = "rustpad-wasm"
 version = "0.1.0"
-authors = ["Eric Zhang <ekzhang1@gmail.com>"]
+authors = ["Aviral Bhardwaj"]
 edition = "2021"
 
 [lib]

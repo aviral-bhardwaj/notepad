@@ -143,24 +143,24 @@ function Sidebar({
         About
       </Heading>
       <Text fontSize="sm" mb={1.5}>
-        <strong>Rustpad</strong> is an open-source collaborative text editor
-        based on the <em>operational transformation</em> algorithm.
+        <strong>NoteSync</strong> is a self-hosted collaborative code editor
+        built on the <em>operational transformation</em> algorithm.
       </Text>
       <Text fontSize="sm" mb={1.5}>
         Share a link to this pad with others, and they can edit from their
         browser while seeing your changes in real time.
       </Text>
       <Text fontSize="sm" mb={1.5}>
-        Built using Rust and TypeScript. See the{" "}
+        Built with Rust + WebAssembly + TypeScript. See the{" "}
         <Link
           color="blue.600"
           fontWeight="semibold"
-          href="https://github.com/ekzhang/rustpad"
+          href="https://github.com/aviral-bhardwaj/notepad"
           isExternal
         >
           GitHub repository
-        </Link>{" "}
-        for details.
+        </Link>
+        .
       </Text>
 
       <Button
