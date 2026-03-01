@@ -70,6 +70,30 @@ docker run --rm -dp 3030:3030 notesync
 
 Then open [http://localhost:3030](http://localhost:3030).
 
+## Docker Hub CI/CD
+
+A GitHub Actions workflow (`.github/workflows/docker.yml`) automatically builds and pushes the Docker image to Docker Hub on every push to `main`.
+
+### Required Secrets
+
+Add these two secrets in **Settings → Secrets and variables → Actions** of the repository:
+
+| Secret name          | Value                                    |
+|----------------------|------------------------------------------|
+| `DOCKERHUB_USERNAME` | Your Docker Hub username (`ardb123`)     |
+| `DOCKERHUB_TOKEN`    | A Docker Hub [access token](https://hub.docker.com/settings/security) |
+
+### Pull and run the published image
+
+```bash
+# Replace ardb123 with your Docker Hub username if you have forked this repository
+docker run -p 3030:3030 ardb123/notepad:latest
+```
+
+Then open [http://localhost:3030](http://localhost:3030).
+
+> **Note:** The workflow runs automatically on every push to `main`. Pull requests only trigger a build (no push) to validate the `Dockerfile` without exposing secrets.
+
 ---
 
 <sup>Built by <a href="https://github.com/aviral-bhardwaj">Aviral Bhardwaj</a>. MIT License.</sup>
