@@ -1,0 +1,60 @@
+# Build the Docker image and push it to Docker Hub.
+# Triggered on every push to main and on pull requests targeting main.
+# Secrets required (set in repo Settings → Secrets → Actions):
+#   DOCKERHUB_USERNAME  – Docker Hub username (ardb123)
+#   DOCKERHUB_TOKEN     – Docker Hub access token
+
+name: Docker
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  IMAGE_NAME: ardb123/notepad  # Docker Hub image name; update if the username changes
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest  # amd64, compatible with --platform=amd64 Dockerfile stages
+    permissions:
+      contents: read  # Only need to read the repository to build the image
+
+    steps:
+      # 1. Check out the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Set up Docker Buildx for layer-caching support
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 3. Log in to Docker Hub (skipped for pull requests to avoid secret exposure)
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 4. Derive a short SHA for the image tag
+      - name: Set short SHA
+        id: vars
+        run: echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      # 5. Build (and push on main) with GitHub Actions cache to speed up Rust compilation
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          # Push only when merging to main; pull requests only build (no secret access)
+          push: ${{ github.event_name == 'push' }}
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.short_sha }}
+          build-args: |
+            GITHUB_SHA=${{ github.sha }}
+          # Cache layers in GitHub Actions cache to avoid rebuilding Rust from scratch
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
